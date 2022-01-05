@@ -1,6 +1,14 @@
 package net.fabricmc.example;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.SpawnerBlock;
+import net.minecraft.block.entity.MobSpawnerBlockEntity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.util.ActionResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,9 +20,15 @@ public class ExampleMod implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
+		UseBlockCallback.EVENT.register(((player, world, hand, hitResult) -> {
+			if (player.getStackInHand(hand).getItem() != Items.WITHER_SKELETON_SKULL) return ActionResult.PASS;
+			var block = world.getBlockState(hitResult.getBlockPos());
+			if (block.getBlock() != Blocks.SPAWNER) return  ActionResult.PASS;
+			var blockEntity = (MobSpawnerBlockEntity) world.getBlockEntity(hitResult.getBlockPos());
+			blockEntity.getLogic().setEntityId(EntityType.WITHER_SKELETON);
+			player.getStackInHand(hand).decrement(1);
+			return ActionResult.SUCCESS;
+		}));
 
 		LOGGER.info("Hello Fabric world!");
 	}
